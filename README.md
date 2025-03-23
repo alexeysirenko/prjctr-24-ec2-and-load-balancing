@@ -12,8 +12,6 @@ terraform init
 terraform apply -var-file="terraform.tfvars"
 ```
 
-![image.png](apply-result)
-
 You should receive in the output DNS name of the load balancer (for example):
 
 ```
@@ -33,3 +31,7 @@ com:80
 ```
 Hello from ip-10-0-4-139.eu-central-1.compute.internal
 ```
+
+## Expected scheme of the created resources:
+
+![image.png](image.png)
