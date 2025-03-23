@@ -18,7 +18,6 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
-# Create VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr_block
   enable_dns_support   = true
@@ -51,7 +50,6 @@ resource "aws_subnet" "public_subnets" {
   }
 }
 
-# Create NAT Gateway in the first public subnet
 resource "aws_eip" "nat_gateway" {
   vpc = true
   tags = {
@@ -68,7 +66,6 @@ resource "aws_nat_gateway" "main" {
   }
 }
 
-# Create Private Subnets
 resource "aws_subnet" "private_subnets" {
   count = length(var.private_subnet_cidrs)
 
@@ -81,7 +78,6 @@ resource "aws_subnet" "private_subnets" {
   }
 }
 
-# Default Route Table
 resource "aws_default_route_table" "default" {
   default_route_table_id = aws_vpc.main.default_route_table_id
 
@@ -91,7 +87,6 @@ resource "aws_default_route_table" "default" {
   }
 }
 
-# Public Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -105,14 +100,12 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Associate Public Subnets with Public Route Table
 resource "aws_route_table_association" "public" {
   count          = length(aws_subnet.public_subnets)
   subnet_id      = aws_subnet.public_subnets[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
-# Private Route Table
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
@@ -126,14 +119,12 @@ resource "aws_route_table" "private" {
   }
 }
 
-# Associate Private Subnets with Private Route Table
 resource "aws_route_table_association" "private" {
   count          = length(aws_subnet.private_subnets)
   subnet_id      = aws_subnet.private_subnets[count.index].id
   route_table_id = aws_route_table.private.id
 }
 
-# Security Group for ECS Tasks
 resource "aws_security_group" "ecs_task_sg" {
   name_prefix = "${var.name_tag}-ecs-task-sg-"
   description = "Security group for ECS tasks"
@@ -158,7 +149,6 @@ resource "aws_security_group" "ecs_task_sg" {
   }
 }
 
-# Security Group for ALB
 resource "aws_security_group" "alb_sg" {
   name_prefix = "${var.name_tag}-alb-sg-"
   description = "Allow HTTP access for ALB"
@@ -183,7 +173,6 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = local.cluster_name
 }
@@ -205,7 +194,6 @@ resource "aws_iam_role" "ecs_task_role" {
   })
 }
 
-# ECS Task Execution Role
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = local.ecs_task_execution_role_name
 
@@ -244,13 +232,11 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   }
 }
 
-# Attach Permissions for ECS Execution Role
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ECS Log Group
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
   name              = "/ecs/${var.name_tag}/${local.container_name}"
   retention_in_days = 7
@@ -260,7 +246,6 @@ resource "aws_cloudwatch_log_group" "ecs_log_group" {
   }
 }
 
-# ECS Task Definition
 resource "aws_ecs_task_definition" "task" {
   family                   = local.ecs_task_definition_family
   network_mode             = "awsvpc"
@@ -301,7 +286,6 @@ resource "aws_ecs_task_definition" "task" {
   ])
 }
 
-# Load Balancer
 resource "aws_lb" "application_load_balancer" {
   name               = local.application_load_balancer_name
   internal           = var.alb_internal
@@ -314,7 +298,6 @@ resource "aws_lb" "application_load_balancer" {
   }
 }
 
-# Target Group
 resource "aws_lb_target_group" "main" {
   name       = local.aws_lb_target_group_name
   port       = var.app_port
@@ -335,7 +318,6 @@ resource "aws_lb_target_group" "main" {
   }
 }
 
-# Listener
 resource "aws_lb_listener" "listener" {
   load_balancer_arn = aws_lb.application_load_balancer.arn
   port              = var.host_port
@@ -351,7 +333,6 @@ resource "aws_lb_listener" "listener" {
   }
 }
 
-# ECS Service
 resource "aws_ecs_service" "service" {
   name            = local.ecs_service_name
   cluster         = aws_ecs_cluster.main.id
@@ -373,7 +354,6 @@ resource "aws_ecs_service" "service" {
   }
 }
 
-# Auto-scaling Target
 resource "aws_appautoscaling_target" "ecs" {
   max_capacity       = var.max_tasks
   min_capacity       = var.min_tasks
@@ -382,7 +362,6 @@ resource "aws_appautoscaling_target" "ecs" {
   service_namespace  = "ecs"
 }
 
-# Combined CPU-based scaling policy
 resource "aws_appautoscaling_policy" "scale_cpu" {
   name               = "scale-cpu"
   resource_id        = aws_appautoscaling_target.ecs.resource_id
