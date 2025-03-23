@@ -12,7 +12,7 @@ terraform init
 terraform apply -var-file="terraform.tfvars"
 ```
 
-!(apply-result)[image.png]
+![image.png](apply-result)
 
 You should receive in the output DNS name of the load balancer (for example):
 
