@@ -20,13 +20,9 @@ alb_dns_name = "test-dev-alb-443113966.eu-central-1.elb.amazonaws.com"
 
 Open it in your browser or with the `curl` (example):
 
-````
-You can test your ALB quickly using `curl`. Run this command (example):
-
 ```shell
-curl -s http://test-dev-alb-443113966.eu-central-1.elb.amazonaws.
-com:80
-````
+curl -s http://test-dev-alb-443113966.eu-central-1.elb.amazonaws.com:80
+```
 
 ```
 Hello from ip-10-0-4-139.eu-central-1.compute.internal
